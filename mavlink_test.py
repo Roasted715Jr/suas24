@@ -22,30 +22,40 @@ conn.mav.heartbeat_send(mavutil.mavlink.MAV_TYPE_ONBOARD_CONTROLLER,
 
 mavlink_commands.change_mode(conn, "GUIDED")
 
-print(mavlink_commands.arm(conn))
+mavlink_commands.arm(conn)
 print("Armed")
 
-conn.mav.command_long_send(conn.target_system, conn.target_component, mavutil.mavlink.MAV_CMD_NAV_TAKEOFF_LOCAL, 0,
-                            0,
-                            1, 0, 0, 0, 0, 0)
+sleep(3)
 
-# mavlink_commands.change_mode(conn, "AUTO")
+print("Taking off")
+conn.mav.command_long_send(conn.target_system, conn.target_component, mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0,
+                            0, 0, 0, 0, 0, 0, 30)
+
+sleep(3)
+
+mavlink_commands.change_mode(conn, "AUTO")
 
 # # mavlink_commands.change_mode(conn, mavutil.mavlink.MAV_MODE_GUIDED_DISARMED)
 
-# while (True):
-#     # print(conn.recv_match(type="MISSION_CURRENT", blocking=True))
+while (True):
+    # print(conn.recv_match(type="MISSION_CURRENT", blocking=True))
 
-#     mission_state = conn.recv_match(type="MISSION_CURRENT", blocking=True)
-#     print(mission_state)
+    mission_state = conn.recv_match(type="MISSION_CURRENT", blocking=True)
+    print(mission_state)
 
-#     if mission_state.seq == mission_state.total:
-#         print("Finished mission")
-#         break
+    if mission_state.seq == mission_state.total:
+        print("Finished mission")
+        break
 
-# mavlink_commands.change_mode(conn, "GUIDED")
+mavlink_commands.change_mode(conn, "GUIDED")
 
-# sleep(1)
+sleep(3)
+
+mavlink_commands.change_mode(conn, "RTL")
+
+sleep(10)
+
+mavlink_commands.change_mode(conn, "LAND")
 
 # print("Disarming")
 # mavlink_commands.disarm(conn)

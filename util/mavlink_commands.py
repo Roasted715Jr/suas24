@@ -7,11 +7,11 @@ def arm(conn):
 	conn.mav.command_long_send(conn.target_system, conn.target_component, mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM, 0, 1,
 								0, 0, 0, 0, 0, 0)
 	
-	response = conn.recv_match("COMMAND_ACK", blocking=True)
-	while not response or response.command != mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM:
-		continue
+	# response = conn.recv_match("COMMAND_ACK", blocking=True)
+	# while not response or response.command != mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM:
+	# 	continue
 
-	return response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED
+	# return response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED
 
 def disarm(conn):
 	conn.mav.command_long_send(conn.target_system, conn.target_component, mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM, 0, 0,
