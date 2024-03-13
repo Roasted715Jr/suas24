@@ -97,5 +97,5 @@ if __name__ == "__main__":
 	#TEST TEST TEST ONLY
 	connection = None
 
-	relativeCoords = calcDist(connection, 500, 200)
+	relativeCoords = calcDist(connection, 1322, 636)
 	print(findCoords(connection, relativeCoords))

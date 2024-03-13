@@ -9,7 +9,7 @@ pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
 # # image path
 #path = "SUASTestImage.png"
-path = "TargetTestImage7.png"
+path = "TargetTestImage5.png"
 # # Reading an image in default mode:
 inputImage = cv2.imread(path)
 
@@ -31,6 +31,19 @@ for i in range(len(contours)):
         break
 
 cv2.drawContours(image_copy, [letter_contour], -1, (0, 255, 0), 2)
+
+# Change to external contours so contours of the paper
+for contour in contours:
+    M = cv2.moments(contour)
+    cX = int(M["m10"] / M["m00"])
+    cY = int(M["m01"] / M["m00"])
+    # draw the contour and center of the shape on the image
+    #cv2.drawContours(image_copy, [contour], -1, (0, 255, 0), 2)
+    cv2.circle(image_copy, (cX, cY), 1, (255, 255, 255), -1)
+    #cv2.putText(image_copy, "center", (cX - 25, cY - 30),	cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+    
+print(f"target pixel coordinates: \nx: {cX}  y: {cY}\n\n")
+
 
 
 x, y, w, h = cv2.boundingRect(letter_contour)
@@ -61,7 +74,8 @@ blurred_image = cv2.GaussianBlur(binary_image, (3, 3), 0)
 
 # Use pytesseract to perform OCR on the binary image
 recognized_text = pytesseract.image_to_string(blurred_image, config='--psm 6 --oem 3 -l eng')
-print("Recognized text:", recognized_text)
+foundLetter = recognized_text[0]
+print("Recognized text:", foundLetter)
 
 
 #letter_roi = inputImage[y:y+h, x:x+w]
@@ -84,5 +98,5 @@ print(len(contours), "objects were found in this image.")
 
 
 # Save the image to a file
-cv2.imwrite('test_image.jpg', cv2.cvtColor(image_copy, cv2.COLOR_RGB2BGR))
+cv2.imwrite('result.jpg', cv2.cvtColor(image_copy, cv2.COLOR_RGB2BGR))
 cv2.imwrite('gray.jpg', cv2.cvtColor(blurred_image, cv2.COLOR_RGB2BGR))
