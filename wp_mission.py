@@ -35,8 +35,8 @@ def cmd_set_home(home_location, altitude):
         altitude) 
 
 def uploadmission(aFileName):
-    home_location = None
-    home_altitude = None
+    global home_location
+    global home_altitude
 
     with open(aFileName) as f:
         for i, line in enumerate(f):
@@ -57,7 +57,7 @@ def uploadmission(aFileName):
                 ln_y=float(linearray[9])
                 ln_z=float(linearray[10])
                 ln_autocontinue = int(linearray[11].strip())
-                if(i == 1):
+                if(ln_seq == 0):
                     home_location = (ln_x,ln_y)
                     home_altitude = ln_z
                 p = mavutil.mavlink.MAVLink_mission_item_message(conn.target_system, conn.target_component, ln_seq, ln_frame,
@@ -81,56 +81,54 @@ def uploadmission(aFileName):
         conn.mav.send(wp.wp(msg.seq))
         print('Sending waypoint {0}'.format(msg.seq))
 
-uploadmission("mission.txt")
+home_location = None
+home_altitude = None
+uploadmission("Missions/Shelbourne Park.txt")
 
-# #We only want to do this in simulation
-# using_sitl = True
-# if using_sitl:
-#     mavlink_commands.change_mode(conn, "GUIDED")
+#We only want to do this in simulation
+using_sitl = True
+if using_sitl:
+    mavlink_commands.change_mode(conn, "GUIDED")
 
-#     mavlink_commands.arm(conn)
-#     print("Armed")
+    mavlink_commands.arm(conn)
+    print("Armed")
 
-#     sleep(3)
+    sleep(3)
 
-#     print("Taking off")
-#     takeoff_alt = 30
-#     # conn.mav.command_long_send(conn.target_system, conn.target_component, mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0,
-#     #                             0, 0, 0, 0, 0, 0, takeoff_alt)
+    print("Taking off")
+    # takeoff_alt = conn.recv_match(type="GLOBAL_POSITION_INT", blocking=True).relative_alt // 1000 + 5
+    takeoff_alt = 5
+    print(f"Taking off to {takeoff_alt} m")
+    conn.mav.command_long_send(conn.target_system, conn.target_component, mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0,
+                                0, 0, 0, 0, 0, 0, takeoff_alt)
 
-#     # conn.mav.command_int_send(conn.target_system, conn.target_component, mavutil.mavlink.MAV_FRAME_LOCAL_NED, mavutil.mavlink.MAV_CMD_NAV_VTOL_TAKEOFF, 0, 0,
-#     #                             0, mavutil.mavlink.VTOL_TRANSITION_HEADING_ANY, 0, 0, 0, 0, takeoff_alt)
-#     conn.mav.command_long_send(conn.target_system, conn.target_component, mavutil.mavlink.MAV_CMD_NAV_VTOL_TAKEOFF, 0,
-#                                 0, 0, 0, 0, 0, 0, takeoff_alt)
+    # conn.mav.command_int_send(conn.target_system, conn.target_component, mavutil.mavlink.MAV_FRAME_LOCAL_NED, mavutil.mavlink.MAV_CMD_NAV_VTOL_TAKEOFF, 0, 0,
+    #                             0, mavutil.mavlink.VTOL_TRANSITION_HEADING_ANY, 0, 0, 0, 0, takeoff_alt)
+    # conn.mav.command_long_send(conn.target_system, conn.target_component, mavutil.mavlink.MAV_CMD_NAV_VTOL_TAKEOFF, 0,
+    #                             0, 0, 0, 0, 0, 0, takeoff_alt)
 
-#     print("Flying to altitude")
-#     #Altitude is returned in thousandths of feet
-#     while conn.recv_match(type="GLOBAL_POSITION_INT", blocking=True).relative_alt < (takeoff_alt - 1) * 1000:
-#         continue
+    print("Flying to altitude")
+    #Altitude is returned in thousandths of feet
+    while conn.recv_match(type="GLOBAL_POSITION_INT", blocking=True).relative_alt < (takeoff_alt - 1) * 1000:
+        continue
 
-#     print("Reached altitude")
+    print("Reached altitude")
 
-# mavlink_commands.change_mode(conn, "AUTO")
+    mavlink_commands.change_mode(conn, "AUTO")
 
-# #Run the mission until we reach the last loiter waypoint
-# while (True):
-#     mission_state = conn.recv_match(type="MISSION_CURRENT", blocking=True)
-#     # print(mission_state)
+#Run the mission until we reach the last loiter waypoint
+while (True):
+    mission_state = conn.recv_match(type="MISSION_CURRENT", blocking=True)
+    # print(mission_state)
 
-#     if mission_state.seq == mission_state.total:
-#         print("Finished mission")
-#         break
+    if mission_state.seq == mission_state.total:
+        print("Finished mission")
+        break
 
-# mavlink_commands.change_mode(conn, "GUIDED")
+mavlink_commands.change_mode(conn, "GUIDED")
 
 # print("Moving servo")
 # conn.mav.command_long_send(conn.target_system, conn.target_component, mavutil.mavlink.MAV_CMD_DO_SET_SERVO, 0,
 #                             9, 1500, 0, 0, 0, 0, 0)
 
 # sleep(3)
-
-# mavlink_commands.change_mode(conn, "RTL")
-
-# sleep(10)
-
-# mavlink_commands.change_mode(conn, "LAND")
