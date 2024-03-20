@@ -3,10 +3,9 @@ from pymavlink import mavwp
 from util import mavlink_commands, connection
 from time import sleep
 import time
+import json
 
 conn = connection.connect()
-
-waypoints = []
 
 # Wait for the first heartbeat
 #   This sets the system and component ID of remote system for the link
@@ -35,35 +34,67 @@ def cmd_set_home(home_location, altitude):
         altitude) 
 
 def uploadmission(aFileName):
-    global home_location
-    global home_altitude
+    global mission
+    home_location = mission["home_coords"]
+    home_altitude = mission["home_alt_m"]
 
-    with open(aFileName) as f:
-        for i, line in enumerate(f):
-            if i==0:
-                if not line.startswith('QGC WPL 110'):
-                    raise Exception('File is not supported WP version')
-            else:   
-                linearray=line.split('\t')
-                ln_seq = int(linearray[0])
-                ln_current = int(linearray[1])
-                ln_frame = int(linearray[2])
-                ln_command = int(linearray[3])
-                ln_param1=float(linearray[4])
-                ln_param2=float(linearray[5])
-                ln_param3=float(linearray[6])
-                ln_param4=float(linearray[7])
-                ln_x=float(linearray[8])
-                ln_y=float(linearray[9])
-                ln_z=float(linearray[10])
-                ln_autocontinue = int(linearray[11].strip())
-                if(ln_seq == 0):
-                    home_location = (ln_x,ln_y)
-                    home_altitude = ln_z
-                p = mavutil.mavlink.MAVLink_mission_item_message(conn.target_system, conn.target_component, ln_seq, ln_frame,
-                                                                ln_command,
-                                                                ln_current, ln_autocontinue, ln_param1, ln_param2, ln_param3, ln_param4, ln_x, ln_y, ln_z)
-                wp.add(p)
+    # with open(aFileName) as f:
+        # for i, line in enumerate(f):
+        #     if i==0:
+        #         if not line.startswith('QGC WPL 110'):
+        #             raise Exception('File is not supported WP version')
+        #     else:   
+        #         linearray=line.split('\t')
+        #         ln_seq = int(linearray[0])
+        #         ln_current = int(linearray[1])
+        #         ln_frame = int(linearray[2])
+        #         ln_command = int(linearray[3])
+        #         ln_param1=float(linearray[4])
+        #         ln_param2=float(linearray[5])
+        #         ln_param3=float(linearray[6])
+        #         ln_param4=float(linearray[7])
+        #         ln_x=float(linearray[8])
+        #         ln_y=float(linearray[9])
+        #         ln_z=float(linearray[10])
+        #         ln_autocontinue = int(linearray[11].strip())
+        #         if(ln_seq == 0):
+        #             home_location = (ln_x,ln_y)
+        #             home_altitude = ln_z
+        #         p = mavutil.mavlink.MAVLink_mission_item_message(conn.target_system, conn.target_component, ln_seq, ln_frame,
+        #                                                         ln_command,
+        #                                                         ln_current, ln_autocontinue, ln_param1, ln_param2, ln_param3, ln_param4, ln_x, ln_y, ln_z)
+        #         wp.add(p)
+
+	#Add home and takeoff waypoints first
+    wp.add(mavutil.mavlink.MAVLink_mission_item_message(conn.target_system, conn.target_component, 0, 0,
+                                                    16,
+                                                    0, 1, 0, 0, 0, 0, home_location[0], home_location[1], home_altitude))
+    
+    #**********************************************MAKE SURE YOU'RE IN THE RIGHT TAKEOFF MODE (VTOL OR NORMAL)*********************************************
+    #**********************************************MAKE SURE YOU'RE IN THE RIGHT TAKEOFF MODE (VTOL OR NORMAL)*********************************************
+    #**********************************************MAKE SURE YOU'RE IN THE RIGHT TAKEOFF MODE (VTOL OR NORMAL)*********************************************
+    #**********************************************MAKE SURE YOU'RE IN THE RIGHT TAKEOFF MODE (VTOL OR NORMAL)*********************************************
+    vtol_takeoff = False
+    if vtol_takeoff:
+        wp.add(mavutil.mavlink.MAVLink_mission_item_message(conn.target_system, conn.target_component, 1, 3,
+                                                        84,
+                                                        0, 1, 0, 0, 0, 0, home_location[0], home_location[1], home_altitude))
+    else:
+        wp.add(mavutil.mavlink.MAVLink_mission_item_message(conn.target_system, conn.target_component, 1, 3,
+                                                        22,
+                                                        0, 1, 0, 0, 0, 0, home_location[0], home_location[1], mission["takeoff_alt_m"]))
+
+    for i in range(2, len(mission["waypoints"]) + 2):
+        point = mission["waypoints"][i - 2]
+        wp.add(mavutil.mavlink.MAVLink_mission_item_message(conn.target_system, conn.target_component, i, 3,
+                                                    16,
+                                                    0, 1, 0, 0, 0, 0, point[0], point[1], point[2]))
+
+    #Loiter point
+    point = mission["loiter_point"]
+    wp.add(mavutil.mavlink.MAVLink_mission_item_message(conn.target_system, conn.target_component, len(mission["waypoints"]) + 2, 3,
+                                                    17,
+                                                    0, 1, 0, 0, 0, 0, point[0], point[1], point[2]))
                     
     cmd_set_home(home_location,home_altitude)
     msg = conn.recv_match(type = ['COMMAND_ACK'],blocking = True)
@@ -81,8 +112,8 @@ def uploadmission(aFileName):
         conn.mav.send(wp.wp(msg.seq))
         print('Sending waypoint {0}'.format(msg.seq))
 
-home_location = None
-home_altitude = None
+mission = json.load(open("Missions/shelbourne.json"))
+
 uploadmission("Missions/Shelbourne Park.txt")
 
 #We only want to do this in simulation
@@ -98,6 +129,7 @@ if using_sitl:
     print("Taking off")
     # takeoff_alt = conn.recv_match(type="GLOBAL_POSITION_INT", blocking=True).relative_alt // 1000 + 5
     takeoff_alt = 5
+    takeoff_alt = mission["flight_floor_m"] + 5
     print(f"Taking off to {takeoff_alt} m")
     conn.mav.command_long_send(conn.target_system, conn.target_component, mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0,
                                 0, 0, 0, 0, 0, 0, takeoff_alt)
