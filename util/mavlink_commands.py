@@ -1,4 +1,6 @@
 from pymavlink import mavutil
+from enum import Enum
+from ctypes import c_uint8, c_uint16, c_int32
 
 armed = False
 
@@ -35,3 +37,11 @@ def change_mode(conn, mode: str):
 	# 	continue
 
 	# return response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED
+
+def encode_mission_item(conn, cmd: c_uint16, seq: c_uint16, param1: float, param2: float, param3: float, param4: float, x: c_int32, y: c_int32, z: float, mission_type: c_uint8 = mavutil.mavlink.MAV_MISSION_TYPE_MISSION, frame: c_uint8 = mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT):
+	return conn.mav.mission_item_int_encode(conn.target_system, conn.target_component,
+                           seq, frame, cmd,
+						   0, 1, #Current, autocontinue
+                           param1, param2, param3, param4,
+                           x, y, z,
+                           mission_type)
