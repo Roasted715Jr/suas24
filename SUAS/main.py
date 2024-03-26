@@ -1,5 +1,6 @@
 from pymavlink import mavutil
 import time
+import json
 
 CONN_STRING = "udp:127.0.0.1:14580"  #"udp:localhost:5760"
 
@@ -55,6 +56,58 @@ def get_msg(type):
     #while True:
     msg = connection.recv_match(type=type, blocking=True)
     print(msg)
+
+
+# change to json type where coordinates are uploaded
+    
+# makes more sense to move geofence code to waypoint branch
+
+mission = json.load(open("Missions/shelbourne.json"))
+
+geofence = mission["geofence"]         # not sure if this is right format
+
+def enable_alt_geofence(connection):
+    #pranav
+
+    # not sure how to set the actual altitude for the fence
+
+    connection.mav.command_long_send(connection.target_system, connection.target_component, 
+                                     mavutil.mavlink.MAV_CMD_DO_FENCE_ENABLE, 1, 1, 0, 0, 0, 0, 0)
+    
+    print("altitude fence enabled")
+
+
+def enable_poly_geofence(connection):
+    #pranav
+
+    # not sure how to set the actual geofences
+    # should I get the fence coordinates from a txt file or add them in a list locally
+
+    connection.mav.command_long_send(connection.target_system, connection.target_component, 
+                                     mavutil.mavlink.MAV_CMD_DO_FENCE_ENABLE, 1, 4, 0, 0, 0, 0, 0)
+    
+    connection.mav.command_int_send(connection.target_system, connection.target_component, 
+                                    mavutil.mavlink.MAV_CMD_NAV_FENCE_POLYGON_VERTEX_INCLUSION, 5, geofence, 0, 0, 0, 0, 0)
+    print("enabled polygon fence")
+
+
+
+# disabling geofences should be straightforward
+
+def disable_alt_geofence(connection):
+    #pranav
+    connection.mav.command_long_send(connection.target_system, connection.target_component, 
+                                     mavutil.mavlink.MAV_CMD_DO_FENCE_ENABLE, 0, 1, 0, 0, 0, 0, 0)
+    print("disabled altitude fence")
+
+
+def disable_poly_geofence(connection):
+    #pranav
+    connection.mav.command_long_send(connection.target_system, connection.target_component, 
+                                     mavutil.mavlink.MAV_CMD_DO_FENCE_ENABLE, 0, 4, 0, 0, 0, 0, 0)
+    print("disabled polygon fence")
+
+
 
 def arm_and_takeoff(connection, takeoff_alt):
     connection.mav.command_long_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM, 0, 1, 0, 0, 0, 0, 0, 0)
