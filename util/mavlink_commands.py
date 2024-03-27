@@ -115,17 +115,17 @@ def coords_goto(connection, coordinates):
 
     print(f"At target coordinates, {coordinates}")
 
-def init_check():
+def init_check(conn):
     PASSED = False
-    msg = connection.recv_match(blocking=False)
+    msg = conn.recv_match(blocking=False)
     print(msg)
     return PASSED
 
-def print_datastream():
-    msg = connection.recv_match(blocking=True)
+def print_datastream(conn):
+    msg = conn.recv_match(blocking=True)
     return msg
 
-def get_msg(type):
+def get_msg(conn, type):
     #while True:
-    msg = connection.recv_match(type=type, blocking=True)
+    msg = conn.recv_match(type=type, blocking=True)
     print(msg)
