@@ -98,3 +98,34 @@ def disable_poly_geofence(connection):
 	connection.mav.command_long_send(connection.target_system, connection.target_component, 
 									 mavutil.mavlink.MAV_CMD_DO_FENCE_ENABLE, 0, 4, 0, 0, 0, 0, 0)
 	print("disabled polygon fence")
+
+
+def vtol_switch_fw(connection):
+    connection.mav.command_long_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_CMD_DO_VTOL_TRANSISTION, 0, 4, 0, 0, 0, 0, 0, 0)
+    print("Successfully switched to Fixed Wing")
+
+def vtol_switch_mc(connection):
+    connection.mav.command_long_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_CMD_DO_VTOL_TRANSISTION, 0, 3, 0, 0, 0, 0, 0, 0)
+    print("Successfully switched to Multicopter")
+
+def coords_goto(connection, coordinates):
+    print(f"Going to given coordinates, {coordinates}")
+    
+    connection.mav.send(mavutil.mavlink.MAVLink_set_position_target_global_int_message(connection.target_system, connection.target_component, mavutil.mavlink.MAV_FRAME_GLOBAL_INT, 0 ,coordinates[0], coordinates[1], 50, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+
+    print(f"At target coordinates, {coordinates}")
+
+def init_check():
+    PASSED = False
+    msg = connection.recv_match(blocking=False)
+    print(msg)
+    return PASSED
+
+def print_datastream():
+    msg = connection.recv_match(blocking=True)
+    return msg
+
+def get_msg(type):
+    #while True:
+    msg = connection.recv_match(type=type, blocking=True)
+    print(msg)

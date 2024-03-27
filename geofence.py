@@ -22,9 +22,3 @@ mission = json.load(open("Missions/competition.json"))
 
 print(mission["geofence"])
 send_poly_geofence(conn, mission["geofence"])
-
-# print("Moving servo")
-# conn.mav.command_long_send(conn.target_system, conn.target_component, mavutil.mavlink.MAV_CMD_DO_SET_SERVO, 0,
-#                             9, 1500, 0, 0, 0, 0, 0)
-
-# sleep(3)
